@@ -15,6 +15,7 @@ from sys import exit
 from json import loads
 from subprocess import getoutput
 
+
 # get the date that is to be checked for advisories
 parseddate = ArgumentParser(
                  prog='fedora-rustsec-advisory-checker',
@@ -174,7 +175,7 @@ for entry in content.iter():
             entryorder = 0
 
 if pagemaybechanged == 1:
-    print(pagemaybechanged)
+    print("pagemaybechanged output:", pagemaybechanged)
     print("The lack of outputs might be caused by "
           "https://rustsec.org/feed.xml having changed! "
           "But it also can be that today there was no advisory! "
@@ -202,7 +203,8 @@ for x in range(0,len(jsondata["releases"]),1):
     elif jsondata["releases"][x]["state"] == "archived":
         archivedbranchesfound = 1
     elif jsondata["releases"][x]["state"] == "pending":
-        pass
+        if jsondata["releases"][x]["branch"] == "rawhide":
+            currentbranches.append(jsondata["releases"][x]["branch"])
     elif jsondata["releases"][x]["state"] == "frozen":
         currentbranches.append(jsondata["releases"][x]["branch"])
     else:
@@ -211,6 +213,9 @@ for x in range(0,len(jsondata["releases"]),1):
               "and \"archived\"")
         print(jsondata["releases"][x]["state"])
         exit(1)
+
+if "rawhide" not in currentbranches:
+    print("Something must have changed! rawhide did not end up in \"currentbranches\"!")
 
 if currentbranchesfound == 0:
     print("Something went wrong! It seems no currently supported "
