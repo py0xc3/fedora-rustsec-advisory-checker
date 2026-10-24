@@ -4,17 +4,16 @@
 # This tool is experimental and makes several presumptions
 # that are not checked before or during runtime.
 
-from os import listdir
 from git import Repo
 from git.exc import NoSuchPathError
 from datetime import date
-from getpass import getuser
 from requests import get
 from argparse import ArgumentParser
 from xml.etree import ElementTree
 from datetime import datetime
 from sys import exit
-
+from json import loads
+from subprocess import getoutput
 
 # get the date that is to be checked for advisories
 parseddate = ArgumentParser(
@@ -181,35 +180,83 @@ if pagemaybechanged == 1:
           "But it also can be that today there was no advisory! "
           "Verify by checking https://rustsec.org/feed.xml")
 
+# get the current fedora branches
+
+fedorareleases = get("https://bodhi.fedoraproject.org/releases/"
+                     "?rows_per_page=1000")
+if fedorareleases.status_code == 200:
+    jsondata = loads(fedorareleases.content.decode("UTF-8"))
+else:
+    print("Something went wrong! fedorareleases.status_code: ",
+          feed.status_code)
+    exit(1)
+
+currentbranches = []
+archivedbranchesfound = 0
+currentbranchesfound = 0
+
+for x in range(0,len(jsondata["releases"]),1):
+    if jsondata["releases"][x]["state"] == "current":
+        currentbranches.append(jsondata["releases"][x]["branch"])
+        currentbranchesfound = 1
+    elif jsondata["releases"][x]["state"] == "archived":
+        archivedbranchesfound = 1
+    elif jsondata["releases"][x]["state"] == "pending":
+        pass
+    elif jsondata["releases"][x]["state"] == "frozen":
+        currentbranches.append(jsondata["releases"][x]["branch"])
+    else:
+        print("Something went wrong! the \"state\" of jsondata "
+              "seems to contain more than \"current\", \"frozen\" "
+              "and \"archived\"")
+        print(jsondata["releases"][x]["state"])
+        exit(1)
+
+if currentbranchesfound == 0:
+    print("Something went wrong! It seems no currently supported "
+          "branches have been found!")
+    exit(1)
+if archivedbranchesfound == 0:
+    print("Something went wrong! It seems no archived "
+          "branches have been found!")
+    exit(1)
+
+# remove duplicates
+currentbranches = list(set(currentbranches))
+
+# do the fedrq commands to check out what crates exist in
+# fedora, as package or bundled. This is designed to rather add a
+# false output that will raise awareness of an issue later (e.g.,
+# when a ticket is raised for something not packaged/bundled) rather
+# than giving no output: yet, this output should still be taken with care
+
 fedoraadvisories = []
 nonfedoraadvisories = []
 
-for x in range(0,len(advisories),1):
-    cratelink = ("https://src.fedoraproject.org/rpms/rust-"
-                 + advisories[x][0])
-    fedoracrate = get(cratelink)
-    if fedoracrate.status_code == 200:
-        fedoraadvisories.append(advisories[x])
-    elif fedoracrate.status_code == 404:
-        # NOTE: HERE, A CHECK FOR BUNDLES SHOULD BE ADDED
-        nonfedoraadvisories.append(advisories[x])
-    else:
-        print("Something went wrong when checking distgit! "
-            "fedoracrate.status_code: ", feed.status_code)
-        exit(1)
+for xa in range(0,len(advisories),1):
+    for xc in range(0,len(currentbranches),1):
+        fedpack = ("fedrq pkgs -P -b " + currentbranches[xc]
+                   + " \"crate(" + advisories[xa][0] + ")\"")
+        fedbundle = ("fedrq pkgs -P -b " + currentbranches[xc]
+                     + " \"bundled(crate(" + advisories[xa][0] + "))\"")
+        fedpackres =  getoutput(fedpack)
+        fedbundleres = getoutput(fedbundle)
+        if advisories[xa][0] in fedpackres:
+            advisories[xa].append(currentbranches[xc])
+        elif advisories[xa][0] not in fedpackres:
+            if advisories[xa][0] in fedbundleres:
+                advisories[xa].append(currentbranches[xc])
+    # if any branch has been confirmed, len() will be more than 2
+    if len(advisories[xa]) > 2:
+        fedoraadvisories.append(advisories[xa])
+    if len(advisories[xa]) <= 2:
+        nonfedoraadvisories.append(advisories[xa])
 
-print("Please compare all advisory entries of the very day "
-      "with the following two lists. The number of entries on "
-      "https://rustsec.org/feed.xml of the very day must be equal to "
-      "the sum of fedora and non-fedora advisories output by this tool!")
-print()
-print("Fedora advisory entries:")
+# Output results for the user
+print("Fedora Advisories and confirmed branches:")
 for x in range(0,len(fedoraadvisories),1):
     print(fedoraadvisories[x])
-print()
-print("Non-Fedora advisory entries:")
+print("---")
+print("Non-Fedora Advisories:")
 for x in range(0,len(nonfedoraadvisories),1):
     print(nonfedoraadvisories[x])
-print()
-print("IMPORTANT: this script does not yet check if a crate "
-      "is bundled somewhere!")
