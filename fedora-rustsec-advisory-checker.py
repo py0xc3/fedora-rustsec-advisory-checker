@@ -214,9 +214,38 @@ for x in range(0,len(jsondata["releases"]),1):
         print(jsondata["releases"][x]["state"])
         exit(1)
 
-if "rawhide" not in currentbranches:
-    print("Something must have changed! rawhide did not end up in \"currentbranches\"!")
+# remove duplicates
+currentbranches = list(set(currentbranches))
 
+# some tests to verify currentbranches make sense
+if "rawhide" not in currentbranches:
+    print("Something must have changed! "
+          "rawhide did not end up in \"currentbranches\"!")
+    exit(1)
+# There should always 2 or 3 F** branches
+fbranches = 0
+for x in range(0,len(currentbranches),1):
+    if "f" == currentbranches[x][0]:
+        if len(currentbranches[x]) == 3:
+            fbranches = fbranches + 1
+if fbranches != 2:
+    if fbranches != 3:
+        print("Something went wrong! There should be always only 2 or 3 "
+              "f** branches, but \"fbranches\" counts: ", fbranches)
+        exit(1)
+# There should always epel branches
+epelbranches = 0
+for x in range(0,len(currentbranches),1):
+    if "epel" == currentbranches[x][0:4]:
+        if len(currentbranches[x]) > 4:
+            epelbranches = epelbranches + 1
+if epelbranches < 2:
+        print("Something went wrong! There should be always 2+ epel branches, "
+              "with any version number, but "
+              "\"epelbranches\" counts: ", epelbranches)
+        exit(1)
+
+# there should be always supported and archived branches
 if currentbranchesfound == 0:
     print("Something went wrong! It seems no currently supported "
           "branches have been found!")
@@ -225,9 +254,6 @@ if archivedbranchesfound == 0:
     print("Something went wrong! It seems no archived "
           "branches have been found!")
     exit(1)
-
-# remove duplicates
-currentbranches = list(set(currentbranches))
 
 # do the fedrq commands to check out what crates exist in
 # fedora, as package or bundled. This is designed to rather add a
