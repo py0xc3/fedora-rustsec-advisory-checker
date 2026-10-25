@@ -296,9 +296,11 @@ for xa in range(0,len(advisories),1):
         fedbundleres = getoutput(fedbundle)
         if advisories[xa][0] in fedpackres:
             advisories[xa].append(currentbranches[xc])
+            advisories[xa].append(fedpackres) # TEST: is this information necessary?
         elif advisories[xa][0] not in fedpackres:
             if advisories[xa][0] in fedbundleres:
                 advisories[xa].append(currentbranches[xc])
+                advisories[xa].append(fedbundleres) # TEST: is this information necessary?
     # if any branch has been confirmed, len() will be more than 2
     if len(advisories[xa]) > 2:
         fedoraadvisories.append(advisories[xa])
@@ -306,10 +308,45 @@ for xa in range(0,len(advisories),1):
         nonfedoraadvisories.append(advisories[xa])
 
 # Output results for the user
-print("Fedora Advisories and confirmed branches:")
+### THE ### IS NOT RELEVANT IF THE TICKET (CREATED BELOW) IS USED
+###print("Fedora Advisories and confirmed branches:")
+###for x in range(0,len(fedoraadvisories),1):
+###    print(fedoraadvisories[x])
+###print("---")
+print("Non-Fedora Advisories (you might want to review the Non-Fedora Advisories, "
+      "if there are any, in order to ensure they are really Non-Fedora:")
+if len(nonfedoraadvisories) == 0:
+    print("None")
+else:
+    for x in range(0,len(nonfedoraadvisories),1):
+        print(nonfedoraadvisories[x])
+
+###Prepare Fedora Forge tickets that can be copy/pasted after review
+print()
+print("--- --- ---")
+print()
+print("For Fedora Advisories, you find below the prepared tickets for "
+      "copy/paste after review "
+      "to https://forge.fedoraproject.org/rust/backlog/:")
+print()
+print("--- --- ---")
+print()
 for x in range(0,len(fedoraadvisories),1):
-    print(fedoraadvisories[x])
-print("---")
-print("Non-Fedora Advisories:")
-for x in range(0,len(nonfedoraadvisories),1):
-    print(nonfedoraadvisories[x])
+    print("Ticket " + str(x) + ":")
+    print("---")
+    print("TITLE:")
+    print("RustSec Advisory for crate " + str(fedoraadvisories[x][0])
+          + " (packaged or bundled in Fedora)")
+    print("---")
+    print("CONTENT:")
+    print(fedoraadvisories[x][1])
+    print("The crate " + str(fedoraadvisories[x][0]) + " is available in the "
+          "following branches, with each branch being followed by the affected "
+          "packages or bundles of the very branch: ")
+    for x2 in range(2,len(fedoraadvisories[x]),1):
+        if ".noarch" in fedoraadvisories[x][x2]:
+            print(str(fedoraadvisories[x][x2].split("\n")))
+        if ".noarch" not in fedoraadvisories[x][x2]:
+            print(str(fedoraadvisories[x][x2]))
+    print("--- --- ---")
+    print()
