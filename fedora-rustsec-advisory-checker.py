@@ -97,6 +97,7 @@ firsttitleentry = "RustSec Advisories"
 # links shall be ignored until the actual entries begin
 initlinks = 0
 
+# get the advisories from RustSec and do many tests to verify the result
 for entry in content.iter():
     if "{http://www.w3.org/2005/Atom}title" == entry.tag:
         if entryorder > 0:
@@ -108,8 +109,29 @@ for entry in content.iter():
             advisorycandidate = entry.text[36:] # selects the crate
             newcandidate = 1
             entryorder = 1
+            if ": Vulnerability in " != entry.text[17:36]:
+                print("\": Vulnerability in \" is not where it was expected:"
+                      "https://rustsec.org/feed.xml seems to have changed!")
+                exit(1)
+            try:
+                int(entry.text[13:17])
+            except ValueError:
+                print("The RUSTSEC number is not where it was expected: "
+                      "https://rustsec.org/feed.xml seems to have changed!")
+                exit(1)
+            #the next test is likely tautological and can be removed in the future
+            if entry.text[36:] != entry.text[0-len(advisorycandidate):]:
+                print("Selecting the crate name forwards and backwards does "
+                      "lead to different results: "
+                      "https://rustsec.org/feed.xml seems to have changed!")
+                exit(1)
             if " " in entry.text[36:]:
-                print("there is a space in the crate name: something in "
+                print("There is a space in the crate name: something in "
+                      "https://rustsec.org/feed.xml seems to have changed!")
+                exit(1)
+            #the next test is likely tautological and can be removed in the future
+            if " " in entry.text[0-len(advisorycandidate):]:
+                print("There is a space in the crate name when selected backwards: "
                       "https://rustsec.org/feed.xml seems to have changed!")
                 exit(1)
             if "RUSTSEC-2" != entry.text[0:9]:
