@@ -196,15 +196,7 @@ for entry in content.iter():
         if entry.text[0:10] != date:
             entryorder = 0
 
-if pagemaybechanged == 1:
-    print("pagemaybechanged output:", pagemaybechanged)
-    print("The lack of outputs might be caused by "
-          "https://rustsec.org/feed.xml having changed! "
-          "But it also can be that today there was no advisory! "
-          "Verify by checking https://rustsec.org/feed.xml")
-
 # get the current fedora branches
-
 fedorareleases = get("https://bodhi.fedoraproject.org/releases/"
                      "?rows_per_page=1000")
 if fedorareleases.status_code == 200:
@@ -313,40 +305,49 @@ for xa in range(0,len(advisories),1):
 ###for x in range(0,len(fedoraadvisories),1):
 ###    print(fedoraadvisories[x])
 ###print("---")
-print("Non-Fedora Advisories (you might want to review the Non-Fedora Advisories, "
-      "if there are any, in order to ensure they are really Non-Fedora:")
-if len(nonfedoraadvisories) == 0:
-    print("None")
-else:
-    for x in range(0,len(nonfedoraadvisories),1):
-        print(nonfedoraadvisories[x])
+# if pagemaybechanged == 1 then see below
+if pagemaybechanged != 1:
+    print("Non-Fedora Advisories (you might want to review the Non-Fedora Advisories, "
+        "if there are any, in order to ensure they are really Non-Fedora:")
+    if len(nonfedoraadvisories) == 0:
+        print("None")
+    else:
+        for x in range(0,len(nonfedoraadvisories),1):
+            print(nonfedoraadvisories[x])
 
-###Prepare Fedora Forge tickets that can be copy/pasted after review
-print()
-print("--- --- ---")
-print()
-print("For Fedora Advisories, you find below the prepared tickets for "
-      "copy/paste after review "
-      "to https://forge.fedoraproject.org/rust/backlog/:")
-print()
-print("--- --- ---")
-print()
-for x in range(0,len(fedoraadvisories),1):
-    print("Ticket " + str(x) + ":")
-    print("---")
-    print("TITLE:")
-    print("RustSec Advisory for crate " + str(fedoraadvisories[x][0])
-          + " (packaged or bundled in Fedora)")
-    print("---")
-    print("CONTENT:")
-    print(fedoraadvisories[x][1])
-    print("The crate " + str(fedoraadvisories[x][0]) + " is available in the "
-          "following branches, with each branch being followed by the affected "
-          "packages or bundles of the very branch: ")
-    for x2 in range(2,len(fedoraadvisories[x]),1):
-        if ".noarch" in fedoraadvisories[x][x2]:
-            print(str(fedoraadvisories[x][x2].split("\n")))
-        if ".noarch" not in fedoraadvisories[x][x2]:
-            print(str(fedoraadvisories[x][x2]))
+    #Prepare Fedora Forge tickets that can be copy/pasted after review
+    print()
     print("--- --- ---")
     print()
+    print("For Fedora Advisories, you find below the prepared tickets for "
+        "copy/paste after review "
+        "to https://forge.fedoraproject.org/rust/backlog/:")
+    print()
+    print("--- --- ---")
+    print()
+    for x in range(0,len(fedoraadvisories),1):
+        print("Ticket " + str(x) + ":")
+        print("---")
+        print("TITLE:")
+        print("RustSec Advisory for crate " + str(fedoraadvisories[x][0])
+            + " (packaged or bundled in Fedora)")
+        print("---")
+        print("CONTENT:")
+        print(fedoraadvisories[x][1])
+        print("The crate " + str(fedoraadvisories[x][0]) + " is available in the "
+            "following branches, with each branch being followed by the affected "
+            "packages or bundles of the very branch: ")
+        for x2 in range(2,len(fedoraadvisories[x]),1):
+            if ".noarch" in fedoraadvisories[x][x2]:
+                print(str(fedoraadvisories[x][x2].split("\n")))
+            if ".noarch" not in fedoraadvisories[x][x2]:
+                print(str(fedoraadvisories[x][x2]))
+        print("--- --- ---")
+        print()
+# if nothing has been found on RustSec:
+if pagemaybechanged == 1:
+    print("Nothing on RustSec found for the selected date!")
+    print("CAREFUL: The lack of outputs might be caused by "
+          "https://rustsec.org/feed.xml having changed! However, it also "
+          "can be that, for the given date, there was just no advisory! "
+          "Verify by checking https://rustsec.org/feed.xml")
