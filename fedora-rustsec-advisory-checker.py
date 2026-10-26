@@ -307,6 +307,11 @@ for xa in range(0,len(advisories),1):
 ###print("---")
 # if pagemaybechanged == 1 then see below
 if pagemaybechanged != 1:
+    print("Please check if the identified currently-supported branches make sense:")
+    print(currentbranches)
+    print()
+    print("--- --- ---")
+    print()
     print("Non-Fedora Advisories (you might want to review the Non-Fedora Advisories, "
         "if there are any, in order to ensure they are really Non-Fedora:")
     if len(nonfedoraadvisories) == 0:
