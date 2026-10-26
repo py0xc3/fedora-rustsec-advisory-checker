@@ -205,9 +205,12 @@ fedorareleases = get("https://bodhi.fedoraproject.org/releases/"
                      "?rows_per_page=1000")
 if fedorareleases.status_code == 200:
     jsondata = loads(fedorareleases.content.decode("UTF-8"))
+elif fedorareleases.status_code == 504:
+    print("504 Gateway Timeout from bodhi.fedoraproject.org: "
+          "You might want to try again later...")
 else:
     print("Something went wrong! fedorareleases.status_code: ",
-          feed.status_code)
+          fedorareleases.status_code)
     exit(1)
 
 currentbranches = []
@@ -292,17 +295,16 @@ for xa in range(0,len(advisories),1):
         # either importing python from fedrq or its actual backend
         fedpackres =  getoutput(fedpack)
         fedbundleres = getoutput(fedbundle)
-        if advisories[xa][0] in fedpackres:
-            advisories[xa].append(currentbranches[xc])
-            advisories[xa].append(fedpackres) # TEST: is this information necessary?
-        elif advisories[xa][0] not in fedpackres:
-            if advisories[xa][0] in fedbundleres:
-                advisories[xa].append(currentbranches[xc])
-                advisories[xa].append(fedbundleres) # TEST: is this information necessary?
+        if "" != fedpackres:
+            advisories[xa].append((currentbranches[xc] + " packaged:"))
+            advisories[xa].append(fedpackres)
+        if "" != fedbundleres:
+            advisories[xa].append((currentbranches[xc] + " bundled:"))
+            advisories[xa].append(fedbundleres)
     # if any branch has been confirmed, len() will be more than 2
     if len(advisories[xa]) > 2:
         fedoraadvisories.append(advisories[xa])
-    if len(advisories[xa]) <= 2:
+    elif len(advisories[xa]) <= 2:
         nonfedoraadvisories.append(advisories[xa])
 
 # Output results for the user
@@ -338,21 +340,27 @@ if pagemaybechanged != 1:
     print()
     for x in range(0,len(fedoraadvisories),1):
         print("Ticket " + str(x) + ":")
+        print()
         print("---")
+        print()
         print("TITLE:")
         print("RustSec Advisory for crate " + str(fedoraadvisories[x][0])
             + " (packaged or bundled in Fedora)")
+        print()
         print("---")
+        print()
         print("CONTENT:")
         print(fedoraadvisories[x][1])
-        print("The crate " + str(fedoraadvisories[x][0]) + " is available in the "
-            "following branches, with each branch being followed by the affected "
-            "packages or bundles of the very branch: ")
+        print("The crate " + str(fedoraadvisories[x][0]) + " is available in "
+              "the following branches (first the very branch followed by its "
+              "packages and then the very branch followed by its bundles):")
         for x2 in range(2,len(fedoraadvisories[x]),1):
-            if ".noarch" in fedoraadvisories[x][x2]:
-                print(str(fedoraadvisories[x][x2].split("\n")))
-            if ".noarch" not in fedoraadvisories[x][x2]:
-                print(str(fedoraadvisories[x][x2]))
+            if str(fedoraadvisories[1][4].split("\n"))[0-12:] == " packaged:\']":
+                print()
+            elif str(fedoraadvisories[1][4].split("\n"))[0-11:] == " bundled:\']":
+                print()
+            print(str(fedoraadvisories[x][x2].split("\n")))
+            print("--- --- ---")
         print("--- --- ---")
         print()
 # if nothing has been found on RustSec:
