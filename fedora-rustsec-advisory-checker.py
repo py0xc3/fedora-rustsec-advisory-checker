@@ -13,6 +13,10 @@ from xml.etree import ElementTree
 from datetime import datetime
 from sys import exit
 from json import loads
+# both getoutput() use cases might be later replaced through integration:
+# either importing python from fedrq or its actual backend
+# (maybe the script is then to be further developed to a real tool
+# rather than just remaining a procedural one-file-script)
 from subprocess import getoutput
 
 
@@ -284,6 +288,8 @@ for xa in range(0,len(advisories),1):
                    + " \"crate(" + advisories[xa][0] + ")\"")
         fedbundle = ("fedrq pkgs -P -b " + currentbranches[xc]
                      + " \"bundled(crate(" + advisories[xa][0] + "))\"")
+        # both getoutput() might be later replaced through integration:
+        # either importing python from fedrq or its actual backend
         fedpackres =  getoutput(fedpack)
         fedbundleres = getoutput(fedbundle)
         if advisories[xa][0] in fedpackres:
