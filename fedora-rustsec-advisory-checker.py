@@ -321,7 +321,7 @@ if pagemaybechanged != 1:
     print("--- --- ---")
     print()
     print("Non-Fedora Advisories (you might want to review the Non-Fedora Advisories, "
-        "if there are any, in order to ensure they are really Non-Fedora:")
+        "if there are any, in order to ensure they are really Non-Fedora):")
     if len(nonfedoraadvisories) == 0:
         print("None")
     else:
@@ -335,11 +335,13 @@ if pagemaybechanged != 1:
     print("For Fedora Advisories, you find below the prepared tickets for "
         "copy/paste after review "
         "to https://forge.fedoraproject.org/rust/backlog/:")
+    if fedoraadvisories == []:
+        print("No Fedora Advisories identified!")
     print()
     print("--- --- ---")
     print()
     for x in range(0,len(fedoraadvisories),1):
-        print("Ticket " + str(x) + ":")
+        print("Ticket " + str(x+1) + ":")
         print()
         print("---")
         print()
@@ -355,12 +357,15 @@ if pagemaybechanged != 1:
               "the following branches (first the very branch followed by its "
               "packages and then the very branch followed by its bundles):")
         for x2 in range(2,len(fedoraadvisories[x]),1):
-            if str(fedoraadvisories[1][4].split("\n"))[0-12:] == " packaged:\']":
+            if fedoraadvisories[x][x2][0-10:] == " packaged:":
                 print()
-            elif str(fedoraadvisories[1][4].split("\n"))[0-11:] == " bundled:\']":
+                print(fedoraadvisories[x][x2])
+            elif fedoraadvisories[x][x2][0-9:] == " bundled:":
                 print()
-            print(str(fedoraadvisories[x][x2].split("\n")))
-            print("--- --- ---")
+                print(fedoraadvisories[x][x2])
+            else:
+                print(fedoraadvisories[x][x2].split("\n"))
+        print()
         print("--- --- ---")
         print()
 # if nothing has been found on RustSec:
